@@ -23,7 +23,7 @@ namespace replace_in_file
 
             var content = File.ReadAllText(filePath);
             var sb = new StringBuilder(content);
-            ProcessingSet[] items = new ProcessingSet[(args.Length - 1) / 3];
+            var items = new ProcessingSet[(args.Length - 1) / 3];
             var counter = 0;
             for (int i = 1; i < args.Length - 2; i += 3)
             {
@@ -50,7 +50,22 @@ namespace replace_in_file
 
         static void ShowHelp()
         {
-            Console.WriteLine("The correct syntax is replace-in-file \"file-path\" -set \"placeholer1\" \"value1\" -set \"placeholder2\" \"value2\" ...");
+            Write("The correct syntax is:\n", ConsoleColor.Red);
+            Write("replace-in-file ");
+            Write("\"file-path\" ", ConsoleColor.White);
+            Write("-set ");
+            Write("placeholer1 value1 ", ConsoleColor.Cyan);
+            Write("-set ");
+            Write("\"place holer with space\" \"value with space\" ", ConsoleColor.Cyan);
+            Write("-set ");
+            Write("...", ConsoleColor.Cyan);
+        }
+
+        static void Write(string text, ConsoleColor color = ConsoleColor.Yellow)
+        {
+            Console.ForegroundColor = color;
+            Console.Write(text);
+            Console.ResetColor();
         }
     }
 

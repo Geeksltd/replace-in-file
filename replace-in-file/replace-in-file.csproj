@@ -9,7 +9,11 @@
     <ToolCommandName>replace-in-file</ToolCommandName>
     <PackageOutputPath>./nupkg</PackageOutputPath>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Authors>Geeks ltd</Authors>
+    <Authors>Geeks Ltd</Authors>
+    <Description>A .NET Global tool for replacing placeholders in files.</Description>
+    <PackageProjectUrl>https://github.com/Geeksltd/replace-in-file</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Geeksltd/replace-in-file</RepositoryUrl>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
 </Project>
