@@ -15,7 +15,7 @@ dotnet tool install -g replace-in-file
 In command line, you can invoke this tool on any file using the following syntax:
 
 ```
-replace-in-file "file-path.txt" | "placeholder1" "value1" | "placeholder2" "value2" | ...
+replace-in-file "file-path.txt" -set "placeholder1" "value1" -set "placeholder2" "value2" -set ...
 ```
 
 It will simply load the file as text into memory, replace each of the specified placeholders with the provided value, and overwrite the file.
