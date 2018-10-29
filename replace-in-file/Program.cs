@@ -73,7 +73,7 @@ namespace replace_in_file
         private static IEnumerable<Replacement> ExtractMappedReplacements(string mappingfilePath)
         {
             if (string.IsNullOrEmpty(mappingfilePath))
-                mappingfilePath = ".\\replace-in-file.mappings";
+                mappingfilePath = ".\\replace-in-file.yaml";
 
             if (!File.Exists(mappingfilePath))
             {
