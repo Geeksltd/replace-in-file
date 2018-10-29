@@ -1,6 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
+using YamlDotNet.Serialization;
 
 namespace replace_in_file
 {
@@ -8,30 +11,54 @@ namespace replace_in_file
     {
         static int Main(string[] args)
         {
-            if (args.Length < 4 || (args.Length - 1) % 3 != 0)
+            try
             {
+                var replacements = ExtractReplacements(args);
+
+                foreach (var item in replacements)
+                {
+                    Populate(item);
+                }
+            }
+            catch (Exception ex)
+            {
+                Write(ex.Message, ConsoleColor.Red);
                 ShowHelp();
                 return 1;
+            }
+
+            return 0;
+        }
+
+        static IEnumerable<Replacement> ExtractReplacements(string[] args)
+        {
+            if (args[0] == "-m")
+                return ExtractMappedReplacements(args[1]);
+
+            return new Replacement[1] { ExtractReplacementFromArgs(args) };
+        }
+
+        private static Replacement ExtractReplacementFromArgs(string[] args)
+        {
+            if (args.Length < 4 || (args.Length - 1) % 3 != 0)
+            {
+                throw new Exception("Invalid arguments!");
             }
 
             var filePath = args[0];
             if (!File.Exists(filePath))
             {
-                Console.WriteLine($"The file at path {filePath} does not exist"); ;
-                return 1;
+                throw new Exception($"The file at path {filePath} does not exist");
             }
 
-            var content = File.ReadAllText(filePath);
-            var sb = new StringBuilder(content);
             var items = new ProcessingSet[(args.Length - 1) / 3];
             var counter = 0;
-            for (int i = 1; i < args.Length - 2; i += 3)
+            for (var i = 1; i < args.Length - 2; i += 3)
             {
                 var separator = args[i];
                 if (separator != "-set")
                 {
-                    Console.WriteLine("You should separate your placeholder and value pairs using -set\n type replace-in-file /? for the syntax.");
-                    return 1;
+                    throw new Exception("You should separate your placeholder and value pairs using -set\n type replace-in-file /? for the syntax.");
                 }
 
                 var placeHolder = args[i + 1];
@@ -41,24 +68,58 @@ namespace replace_in_file
                 counter++;
             }
 
-            for (int i = 0; i < items.Length; ++i)
-                sb = sb.Replace(items[i].PlaceHolder, items[i].Value);
+            return new Replacement { File = filePath, Sets = items };
+        }
+        private static IEnumerable<Replacement> ExtractMappedReplacements(string mappingfilePath)
+        {
+            if (string.IsNullOrEmpty(mappingfilePath))
+                mappingfilePath = ".\\replace-in-file.mappings";
 
-            File.WriteAllText(filePath, sb.ToString());
-            return 0;
+            if (!File.Exists(mappingfilePath))
+            {
+                throw new Exception($"The file at path {mappingfilePath} does not exist");
+            }
+
+            using (var file = File.OpenText(mappingfilePath))
+            {
+                var infoPairs = new Deserializer().Deserialize<Dictionary<string, Dictionary<string, string>>>(file);
+
+                return from item in infoPairs
+                       let fileName = item.Key
+                       let sets = from pair in item.Value
+                                  select new ProcessingSet { PlaceHolder = pair.Key, Value = pair.Value }
+                       select new Replacement { File = fileName, Sets = sets.ToArray() };
+            }
+        }
+
+        static void Populate(Replacement info)
+        {
+            var content = File.ReadAllText(info.File);
+            var sb = new StringBuilder(content);
+            foreach (var pair in info.Sets)
+            {
+                sb = sb.Replace(pair.PlaceHolder, pair.Value);
+            }
+            File.WriteAllText(info.File, sb.ToString());
         }
 
         static void ShowHelp()
         {
-            Write("The correct syntax is:\n", ConsoleColor.Red);
+            WriteLine("The correct syntax is:\n", ConsoleColor.Red);
             Write("replace-in-file ");
             Write("\"file-path\" ", ConsoleColor.White);
             Write("-set ");
             Write("placeholer1 value1 ", ConsoleColor.Cyan);
             Write("-set ");
-            Write("\"place holer with space\" \"value with space\" ", ConsoleColor.Cyan);
+            Write("\"placeholer with space\" \"value with space\" ", ConsoleColor.Cyan);
             Write("-set ");
             Write("...", ConsoleColor.Cyan);
+            WriteLine("Or", ConsoleColor.Red);
+            Write("-m ");
+            Write("the path to the yaml file containing the mappings as below:", ConsoleColor.Cyan);
+            WriteLine("\"filepath\"");
+            WriteLine("  \"KEY1\" : \"VALUE1\" ");
+            WriteLine("  \"KEY2\" : \"VALUE2\" ");
         }
 
         static void Write(string text, ConsoleColor color = ConsoleColor.Yellow)
@@ -67,6 +128,14 @@ namespace replace_in_file
             Console.Write(text);
             Console.ResetColor();
         }
+        static void WriteLine(string text, ConsoleColor color = ConsoleColor.Yellow) =>
+            Write(Environment.NewLine + text, color);
+    }
+
+    struct Replacement
+    {
+        public string File { get; set; }
+        public ProcessingSet[] Sets { get; set; }
     }
 
     struct ProcessingSet
