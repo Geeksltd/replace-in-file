@@ -33,7 +33,7 @@ namespace replace_in_file
         static IEnumerable<Replacement> ExtractReplacements(string[] args)
         {
             if (args[0] == "-m")
-                return ExtractMappedReplacements(args[1]);
+                return ExtractMappedReplacements(args.ElementAtOrDefault(1));
 
             return new Replacement[1] { ExtractReplacementFromArgs(args) };
         }
@@ -62,8 +62,8 @@ namespace replace_in_file
                 }
 
                 var placeHolder = args[i + 1];
-                var vallue = args[i + 2];
-                var item = new ProcessingSet { PlaceHolder = placeHolder, Value = vallue };
+                var value = args[i + 2];
+                var item = new ProcessingSet { PlaceHolder = placeHolder, Value = value };
                 items[counter] = item;
                 counter++;
             }
@@ -87,9 +87,19 @@ namespace replace_in_file
                 return from item in infoPairs
                        let fileName = item.Key
                        let sets = from pair in item.Value
-                                  select new ProcessingSet { PlaceHolder = pair.Key, Value = pair.Value }
+                                  select new ProcessingSet { PlaceHolder = pair.Key, Value = ExtractValue(pair.Value) }
                        select new Replacement { File = fileName, Sets = sets.ToArray() };
             }
+        }
+
+        const string DYNAMIC_VALUE_PREFIX = "env:";
+        static string ExtractValue(string plainValue)
+        {
+            if (!plainValue.StartsWith(DYNAMIC_VALUE_PREFIX)) return plainValue;
+
+            var environmentValueKey = plainValue.TrimStart(DYNAMIC_VALUE_PREFIX.ToCharArray());
+
+            return Environment.GetEnvironmentVariable(environmentValueKey);
         }
 
         static void Populate(Replacement info)

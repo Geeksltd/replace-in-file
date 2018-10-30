@@ -1,0 +1,7 @@
+{
+  "profiles": {
+    "replace-in-file": {
+      "commandName": "Project"
+    }
+  }
+}
